@@ -46,7 +46,7 @@
             <div class="tabs">
                 <button class="tab-button active" data-tab="leagues">Leagues</button>
                 <button class="tab-button" data-tab="teams">Teams</button>
-                <!-- <button class="tab-button" data-tab="players">Players</button> -->
+                <button class="tab-button" data-tab="players">Players</button>
             </div>
             <div class="filter-group" id="league-selected-filter-container" style="display: flex;">
                 <label>Selected League:</label>
@@ -69,6 +69,32 @@
                         title="Clear selection">✕</button>
                 </div>
                 <div id="league-dropdown" class="autocomplete-dropdown"></div>
+            </div>
+            <div id="player-filters-container" style="display: none;">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div class="filter-group autocomplete-container" style="flex: 1;">
+                        <label>Select League:</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="text" id="player-league-filter" placeholder="Type to search leagues..."
+                                autocomplete="off" oninput="filterPlayerLeagueDropdown()" onfocus="showPlayerLeagueDropdown()"
+                                style="flex: 1;" />
+                            <button class="btn btn-secondary" onclick="clearPlayerLeagueSelection()"
+                                title="Clear selection">✕</button>
+                        </div>
+                        <div id="player-league-dropdown" class="autocomplete-dropdown"></div>
+                    </div>
+                    <div class="filter-group autocomplete-container" style="flex: 1;">
+                        <label>Select Team:</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="text" id="player-team-filter" placeholder="Type to search teams..."
+                                autocomplete="off" oninput="filterPlayerTeamDropdown()" onfocus="showPlayerTeamDropdown()"
+                                style="flex: 1;" />
+                            <button class="btn btn-secondary" onclick="clearPlayerTeamSelection()"
+                                title="Clear selection">✕</button>
+                        </div>
+                        <div id="player-team-dropdown" class="autocomplete-dropdown"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -152,13 +178,39 @@
 
         <!-- Players Tab -->
         <div id="players" class="tab-content">
-            <div class="section-header">
-                <h2>Player Position Mapping</h2>
-            </div>
+            <div class="three-column-layout">
+                <!-- Column 1: Players List -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Players</h3>
+                        <span class="count-badge" id="players-count">0</span>
+                    </div>
+                    <div class="column-content" id="players-list">
+                        <div class="empty-state-small">Select a team</div>
+                    </div>
+                </div>
 
-            <div id="players-content">
-                <div class="empty-state">
-                    <p>Loading positions...</p>
+                <!-- Column 2: Player Mappings -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Mappings</h3>
+                        <button class="btn btn-primary btn-sm" id="add-player-mapping-btn"
+                            onclick="showAddPlayerMappingModal()" style="display: none;">+ Add</button>
+                    </div>
+                    <div class="column-content" id="player-mappings-list">
+                        <div class="empty-state-small">Click a player to view mappings</div>
+                    </div>
+                </div>
+
+                <!-- Column 3: Unmapped Player Names -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Unmapped Names</h3>
+                        <span class="count-badge" id="player-unmapped-count">0</span>
+                    </div>
+                    <div class="column-content" id="player-unmapped-list">
+                        <div class="empty-state-small">No unmapped names</div>
+                    </div>
                 </div>
             </div>
         </div>

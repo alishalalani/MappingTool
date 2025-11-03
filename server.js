@@ -98,8 +98,18 @@ app.post('/api.php', async (req, res) => {
                 res.json({ success: true, data: teamMappings });
                 break;
 
+            case 'getPlayers':
+                const [players] = await pool.query('SELECT * FROM player ORDER BY display_name');
+                res.json({ success: true, data: players });
+                break;
+
+            case 'getTeamPlayers':
+                const [teamPlayers] = await pool.query('SELECT * FROM team_player');
+                res.json({ success: true, data: teamPlayers });
+                break;
+
             case 'getPlayerMappings':
-                // Player mapping disabled for now
+                // Player mapping table not implemented yet - return empty array
                 res.json({ success: true, data: [] });
                 break;
 
@@ -130,8 +140,16 @@ app.post('/api.php', async (req, res) => {
                 break;
 
             case 'addPlayerMapping':
-                // Player mapping disabled for now
-                res.json({ success: false, message: 'Player mapping is currently disabled' });
+                const { name: playerName, team_mapping_id, player_id } = req.body;
+                const [playerResult] = await pool.query(
+                    'INSERT INTO player_mapping (name, team_mapping_id, player_id) VALUES (?, ?, ?)',
+                    [playerName, team_mapping_id, player_id]
+                );
+                res.json({
+                    success: true,
+                    data: { id: playerResult.insertId },
+                    message: 'Player mapping added successfully'
+                });
                 break;
 
             case 'updateLeagueMapping':
@@ -170,9 +188,22 @@ app.post('/api.php', async (req, res) => {
                 });
                 break;
 
+            case 'updatePlayerMapping':
+                const { id: updatePlayerMappingId, player_id: updatePlayerId } = req.body;
+                await pool.query('UPDATE player_mapping SET player_id = ? WHERE id = ?', [updatePlayerId, updatePlayerMappingId]);
+                res.json({
+                    success: true,
+                    message: 'Player mapping updated successfully'
+                });
+                break;
+
             case 'deletePlayerMapping':
-                // Player mapping disabled for now
-                res.json({ success: false, message: 'Player mapping is currently disabled' });
+                const { id: playerMappingId } = req.body;
+                await pool.query('DELETE FROM player_mapping WHERE id = ?', [playerMappingId]);
+                res.json({
+                    success: true,
+                    message: 'Player mapping deleted successfully'
+                });
                 break;
 
             default:
