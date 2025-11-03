@@ -9,6 +9,20 @@ let selectedTeam = null;
 let selectedLeagueForTeams = null; // Track selected league in Teams tab
 const API_URL = 'api.php';
 
+// Utility function to highlight search terms in text
+function highlightText(text, searchTerm) {
+    if (!searchTerm || !text) return text;
+
+    // Escape special regex characters in search term
+    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Create case-insensitive regex
+    const regex = new RegExp(`(${escapedTerm})`, 'gi');
+
+    // Replace matches with highlighted version
+    return text.replace(regex, '<span class="highlight">$1</span>');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeTabs();
     loadInitialData();
@@ -174,12 +188,17 @@ function loadLeaguesForSport(searchTerm = '') {
     if (sportLeagues.length === 0) {
         leaguesList.innerHTML = '<div class="empty-state-small">No leagues found</div>';
     } else {
-        leaguesList.innerHTML = sportLeagues.map(league => `
-            <div class="list-item ${selectedLeague && selectedLeague.id === league.id ? 'active' : ''}" onclick="selectLeague(${league.id})">
-                <div class="list-item-name">${league.fullname}</div>
-                <div class="list-item-abbr">${league.abbr}</div>
-            </div>
-        `).join('');
+        const shouldHighlight = searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'items');
+        leaguesList.innerHTML = sportLeagues.map(league => {
+            const highlightedName = shouldHighlight ? highlightText(league.fullname, searchTerm) : league.fullname;
+            const highlightedAbbr = shouldHighlight ? highlightText(league.abbr, searchTerm) : league.abbr;
+            return `
+                <div class="list-item ${selectedLeague && selectedLeague.id === league.id ? 'active' : ''}" onclick="selectLeague(${league.id})">
+                    <div class="list-item-name">${highlightedName}</div>
+                    <div class="list-item-abbr">${highlightedAbbr}</div>
+                </div>
+            `;
+        }).join('');
 
         // Scroll to selected league if one is selected
         if (selectedLeague) {
@@ -209,10 +228,12 @@ function loadLeaguesForSport(searchTerm = '') {
     if (allUnmapped.length === 0) {
         unmappedList.innerHTML = '<div class="empty-state-small">No unmapped names</div>';
     } else {
+        const shouldHighlightUnmapped = searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'unmapped');
         unmappedList.innerHTML = allUnmapped.map(m => {
+            const highlightedName = shouldHighlightUnmapped ? highlightText(m.name, searchTerm) : m.name;
             return `
                 <div class="list-item unmapped-item" data-mapping-id="${m.id}">
-                    <div class="list-item-name">${m.name}</div>
+                    <div class="list-item-name">${highlightedName}</div>
                     ${selectedLeague ? `<button class="map-btn" onclick="mapLeagueMapping(${m.id}, ${selectedLeague.id}); event.stopPropagation();">Map to ${selectedLeague.fullname}</button>` : ''}
                 </div>
             `;
@@ -249,12 +270,16 @@ function selectLeague(leagueId) {
     if (mapped.length === 0) {
         mappingsList.innerHTML = '<div class="empty-state-small">No mappings for this league yet</div>';
     } else {
-        mappingsList.innerHTML = mapped.map(m => `
-            <div class="mapping-item-compact" data-mapping-id="${m.id}">
-                <span class="mapping-name">${m.name}</span>
-                <button class="btn btn-danger btn-sm" onclick="unmapLeagueMapping(${m.id})">Unmap</button>
-            </div>
-        `).join('');
+        const shouldHighlightMappings = searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'mappings');
+        mappingsList.innerHTML = mapped.map(m => {
+            const highlightedName = shouldHighlightMappings ? highlightText(m.name, searchTerm) : m.name;
+            return `
+                <div class="mapping-item-compact" data-mapping-id="${m.id}">
+                    <span class="mapping-name">${highlightedName}</span>
+                    <button class="btn btn-danger btn-sm" onclick="unmapLeagueMapping(${m.id})">Unmap</button>
+                </div>
+            `;
+        }).join('');
     }
 }
 
@@ -357,12 +382,17 @@ function loadTeamsForLeague(searchTerm = '') {
     if (filteredTeams.length === 0) {
         teamsList.innerHTML = '<div class="empty-state-small">No teams found</div>';
     } else {
-        teamsList.innerHTML = filteredTeams.map(team => `
-            <div class="list-item ${selectedTeam && selectedTeam.id === team.id ? 'active' : ''}" onclick="selectTeam(${team.id})">
-                <div class="list-item-name">${team.full_name}</div>
-                <div class="list-item-abbr">${team.abbr}</div>
-            </div>
-        `).join('');
+        const shouldHighlight = searchTerm && searchTerm.trim() !== '' && (currentSearchFilter === 'all' || currentSearchFilter === 'items');
+        teamsList.innerHTML = filteredTeams.map(team => {
+            const highlightedName = shouldHighlight ? highlightText(team.full_name, searchTerm) : team.full_name;
+            const highlightedAbbr = shouldHighlight ? highlightText(team.abbr || '', searchTerm) : (team.abbr || '');
+            return `
+                <div class="list-item ${selectedTeam && selectedTeam.id === team.id ? 'active' : ''}" onclick="selectTeam(${team.id})">
+                    <div class="list-item-name">${highlightedName}</div>
+                    <div class="list-item-abbr">${highlightedAbbr}</div>
+                </div>
+            `;
+        }).join('');
     }
 
     // Update unmapped list - show ALL unmapped team names (team_id is NULL)
@@ -383,10 +413,12 @@ function loadTeamsForLeague(searchTerm = '') {
     if (allUnmapped.length === 0) {
         unmappedList.innerHTML = '<div class="empty-state-small">No unmapped names</div>';
     } else {
+        const shouldHighlightUnmapped = searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'unmapped');
         unmappedList.innerHTML = allUnmapped.map(m => {
+            const highlightedName = shouldHighlightUnmapped ? highlightText(m.name, searchTerm) : m.name;
             return `
                 <div class="list-item unmapped-item" data-mapping-id="${m.id}">
-                    <div class="list-item-name">${m.name}</div>
+                    <div class="list-item-name">${highlightedName}</div>
                     ${selectedTeam ? `<button class="map-btn" onclick="mapTeamMapping(${m.id}, ${selectedTeam.id}); event.stopPropagation();">Map to ${selectedTeam.full_name}</button>` : ''}
                 </div>
             `;
@@ -414,13 +446,17 @@ function loadTeamsForLeague(searchTerm = '') {
         if (mapped.length === 0) {
             mappingsList.innerHTML = '<div class="empty-state-small">No mappings for this team yet</div>';
         } else {
+            const shouldHighlightMappings = searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'mappings');
             console.log('Setting HTML with', mapped.length, 'mappings');
-            const html = mapped.map(m => `
-                <div class="mapping-item-compact" data-mapping-id="${m.id}">
-                    <span class="mapping-name">${m.name}</span>
-                    <button class="btn btn-danger btn-sm" onclick="unmapTeamMapping(${m.id})">Unmap</button>
-                </div>
-            `).join('');
+            const html = mapped.map(m => {
+                const highlightedName = shouldHighlightMappings ? highlightText(m.name, searchTerm) : m.name;
+                return `
+                    <div class="mapping-item-compact" data-mapping-id="${m.id}">
+                        <span class="mapping-name">${highlightedName}</span>
+                        <button class="btn btn-danger btn-sm" onclick="unmapTeamMapping(${m.id})">Unmap</button>
+                    </div>
+                `;
+            }).join('');
             console.log('Generated HTML:', html);
             mappingsList.innerHTML = html;
             console.log('After setting innerHTML:', mappingsList.innerHTML);
