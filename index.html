@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapping Tool - Phoenix Global</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>🗺️ Mapping Tool</h1>
+                    <p class="subtitle">Map teams, leagues, and players to their correct entities</p>
+                </div>
+                <div class="header-right">
+                    <div class="search-container">
+                        <input type="text" id="global-search" placeholder="Search leagues, teams, players..."
+                            oninput="performGlobalSearch()">
+                        <div class="search-filters">
+                            <button class="search-filter-btn active" data-filter="all"
+                                onclick="setSearchFilter('all')">All</button>
+                            <button class="search-filter-btn" data-filter="items"
+                                onclick="setSearchFilter('items')">Leagues</button>
+                            <button class="search-filter-btn" data-filter="unmapped"
+                                onclick="setSearchFilter('unmapped')">Unmapped</button>
+                            <button class="search-filter-btn" data-filter="mappings"
+                                onclick="setSearchFilter('mappings')">Mapped</button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>Sport:</label>
+                        <select id="global-sport-filter" onchange="onSportChange()">
+                            <option value="">-- Select a Sport --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="leagues">Leagues</button>
+                <button class="tab-button" data-tab="teams">Teams</button>
+                <!-- <button class="tab-button" data-tab="players">Players</button> -->
+            </div>
+            <div class="filter-group" id="league-selected-filter-container" style="display: flex;">
+                <label>Selected League:</label>
+                <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
+                    <div id="league-selected-display"
+                        style="flex: 1; padding: 8px; background: var(--bg-secondary); border-radius: 4px; font-weight: 500;">
+                        None
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearLeagueSelectionInLeagueTab()"
+                        title="Clear selection">✕</button>
+                </div>
+            </div>
+            <div class="filter-group autocomplete-container" id="team-league-filter-container" style="display: none;">
+                <label>Select League:</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="team-league-filter" placeholder="Type to search leagues..."
+                        autocomplete="off" oninput="filterLeagueDropdown()" onfocus="showLeagueDropdown()"
+                        style="flex: 1;" />
+                    <button class="btn btn-secondary" onclick="clearLeagueSelection()"
+                        title="Clear selection">✕</button>
+                </div>
+                <div id="league-dropdown" class="autocomplete-dropdown"></div>
+            </div>
+        </div>
+
+        <!-- Leagues Tab -->
+        <div id="leagues" class="tab-content active">
+            <div class="three-column-layout">
+                <!-- Column 1: Leagues List -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Leagues</h3>
+                        <span class="count-badge" id="leagues-count">0</span>
+                    </div>
+                    <div class="column-content" id="leagues-list">
+                        <div class="empty-state-small">Select a sport</div>
+                    </div>
+                </div>
+
+                <!-- Column 2: League Mappings -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Mappings</h3>
+                        <button class="btn btn-primary btn-sm" id="add-mapping-btn"
+                            onclick="showAddLeagueMappingModal()" style="display: none;">+ Add</button>
+                    </div>
+                    <div class="column-content" id="mappings-list">
+                        <div class="empty-state-small">Click a league to view mappings</div>
+                    </div>
+                </div>
+
+                <!-- Column 3: Unmapped League Names -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Unmapped Names</h3>
+                        <span class="count-badge" id="unmapped-count">0</span>
+                    </div>
+                    <div class="column-content" id="unmapped-list">
+                        <div class="empty-state-small">No unmapped names</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teams Tab -->
+        <div id="teams" class="tab-content">
+            <div class="three-column-layout">
+                <!-- Column 1: Teams List -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Teams</h3>
+                        <span class="count-badge" id="teams-count">0</span>
+                    </div>
+                    <div class="column-content" id="teams-list">
+                        <div class="empty-state-small">Select a league</div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Team Mappings -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Mappings</h3>
+                        <button class="btn btn-primary btn-sm" id="add-team-mapping-btn"
+                            onclick="showAddTeamMappingModal()" style="display: none;">+ Add</button>
+                    </div>
+                    <div class="column-content" id="team-mappings-list">
+                        <div class="empty-state-small">Click a team to view mappings</div>
+                    </div>
+                </div>
+
+                <!-- Column 3: Unmapped Team Names -->
+                <div class="column">
+                    <div class="column-header">
+                        <h3>Unmapped Names</h3>
+                        <span class="count-badge" id="team-unmapped-count">0</span>
+                    </div>
+                    <div class="column-content" id="team-unmapped-list">
+                        <div class="empty-state-small">No unmapped names</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players Tab -->
+        <div id="players" class="tab-content">
+            <div class="section-header">
+                <h2>Player Position Mapping</h2>
+            </div>
+
+            <div id="players-content">
+                <div class="empty-state">
+                    <p>Loading positions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapping Modal -->
+    <div id="mapping-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Mapping</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" id="modal-selected-item-group">
+                    <label id="modal-selected-label">Selected Item:</label>
+                    <div id="modal-selected-item"
+                        style="padding: 8px; background: var(--bg-secondary); border-radius: 4px; font-weight: 500;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label id="modal-label">Mapped Name:</label>
+                    <input type="text" id="modal-unmapped-name" placeholder="Enter the mapped name">
+                </div>
+                <div class="form-group" id="modal-target-group">
+                    <label id="modal-target-label">Map to:</label>
+                    <select id="modal-target-select">
+                        <option value="">Select...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMapping()">Save Mapping</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
