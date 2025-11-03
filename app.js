@@ -330,6 +330,73 @@ function clearLeagueSelectionInLeagueTab() {
     }
 }
 
+function clearAllFilters() {
+    // Clear search bar
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    // Clear sport filter
+    const sportFilter = document.getElementById('global-sport-filter');
+    if (sportFilter) {
+        sportFilter.value = '';
+    }
+
+    // Clear all selections
+    selectedLeague = null;
+    selectedLeagueForTeams = null;
+    selectedLeagueForPlayers = null;
+    selectedTeam = null;
+    selectedTeamForPlayers = null;
+    selectedPlayer = null;
+
+    // Update displays
+    updateLeagueSelectedDisplay();
+    updateLeagueFilterInput();
+    updatePlayerLeagueFilterInput();
+    updatePlayerTeamFilterInput();
+
+    // Clear all text filter inputs
+    const teamLeagueFilter = document.getElementById('team-league-filter');
+    if (teamLeagueFilter) {
+        teamLeagueFilter.value = '';
+    }
+
+    const playerLeagueFilter = document.getElementById('player-league-filter');
+    if (playerLeagueFilter) {
+        playerLeagueFilter.value = '';
+    }
+
+    const playerTeamFilter = document.getElementById('player-team-filter');
+    if (playerTeamFilter) {
+        playerTeamFilter.value = '';
+    }
+
+    // Hide dropdowns
+    const dropdowns = document.querySelectorAll('.autocomplete-dropdown');
+    dropdowns.forEach(dropdown => dropdown.classList.remove('show'));
+
+    // Reload current tab with no filters
+    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    if (activeTab === 'leagues') {
+        loadLeaguesForSport('');
+        const mappingsList = document.getElementById('mappings-list');
+        mappingsList.innerHTML = '<div class="empty-state-small">Click a league to view mappings</div>';
+        document.getElementById('add-mapping-btn').style.display = 'none';
+    } else if (activeTab === 'teams') {
+        loadTeamsForLeague('');
+        const teamMappingsList = document.getElementById('team-mappings-list');
+        teamMappingsList.innerHTML = '<div class="empty-state-small">Click a team to view mappings</div>';
+        document.getElementById('add-team-mapping-btn').style.display = 'none';
+    } else if (activeTab === 'players') {
+        loadPlayersForTeam('');
+        const playerMappingsList = document.getElementById('player-mappings-list');
+        playerMappingsList.innerHTML = '<div class="empty-state-small">Click a player to view mappings</div>';
+        document.getElementById('add-player-mapping-btn').style.display = 'none';
+    }
+}
+
 function setSearchFilter(filter) {
     currentSearchFilter = filter;
     document.querySelectorAll('.search-filter-btn').forEach(btn => {
