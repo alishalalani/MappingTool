@@ -377,8 +377,8 @@ function clearAllFilters() {
     const dropdowns = document.querySelectorAll('.autocomplete-dropdown');
     dropdowns.forEach(dropdown => dropdown.classList.remove('show'));
 
-    // Reload current tab with no filters
-    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    // Reload current tab with no filters and no highlights
+    const activeTab = document.querySelector('.tab-button.active').dataset.tab;
     if (activeTab === 'leagues') {
         loadLeaguesForSport('');
         const mappingsList = document.getElementById('mappings-list');
@@ -395,6 +395,9 @@ function clearAllFilters() {
         playerMappingsList.innerHTML = '<div class="empty-state-small">Click a player to view mappings</div>';
         document.getElementById('add-player-mapping-btn').style.display = 'none';
     }
+
+    // Trigger search to remove highlights
+    performGlobalSearch();
 }
 
 function setSearchFilter(filter) {
