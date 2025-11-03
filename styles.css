@@ -135,13 +135,95 @@ header {
     gap: 0.4rem;
 }
 
+.search-input-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
 #global-search {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 2.5rem 0.5rem 1rem;
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     font-size: 0.85rem;
     min-width: 300px;
     transition: all 0.2s ease;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.3rem;
+    opacity: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+}
+
+.search-input-wrapper:hover .search-clear-btn {
+    opacity: 1;
+}
+
+.search-clear-btn:hover {
+    background: var(--border-color);
+    color: var(--danger-color);
+}
+
+/* Selected League Clear Button - Same style as search clear */
+.selected-league-wrapper {
+    position: relative;
+    display: flex;
+    flex: 1;
+}
+
+.selected-league-display {
+    flex: 1;
+    padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.selected-league-clear-btn {
+    position: absolute;
+    right: 0.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.3rem;
+    opacity: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+}
+
+.selected-league-wrapper:hover .selected-league-clear-btn {
+    opacity: 1;
+}
+
+.selected-league-clear-btn:hover {
+    background: var(--border-color);
+    color: var(--danger-color);
 }
 
 #global-search:focus {

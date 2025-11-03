@@ -411,6 +411,14 @@ function setSearchFilter(filter) {
     performGlobalSearch();
 }
 
+function clearSearchInput() {
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+        searchInput.value = '';
+        performGlobalSearch();
+    }
+}
+
 function performGlobalSearch() {
     const searchInput = document.getElementById('global-search');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';

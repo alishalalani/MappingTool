@@ -99,7 +99,7 @@ app.post('/api.php', async (req, res) => {
                 break;
 
             case 'getPlayers':
-                const [players] = await pool.query('SELECT * FROM player ORDER BY display_name');
+                const [players] = await pool.query('SELECT * FROM player ORDER BY name');
                 res.json({ success: true, data: players });
                 break;
 

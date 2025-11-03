@@ -19,8 +19,11 @@
                 </div>
                 <div class="header-right">
                     <div class="search-container">
-                        <input type="text" id="global-search" placeholder="Search leagues, teams, players..."
-                            oninput="performGlobalSearch()">
+                        <div class="search-input-wrapper">
+                            <input type="text" id="global-search" placeholder="Search leagues, teams, players..."
+                                oninput="performGlobalSearch()">
+                            <button class="search-clear-btn" onclick="clearSearchInput()" title="Clear search">✕</button>
+                        </div>
                         <div class="search-filters">
                             <button class="search-filter-btn active" data-filter="all"
                                 onclick="setSearchFilter('all')">All</button>
@@ -53,12 +56,11 @@
             </div>
             <div class="filter-group" id="league-selected-filter-container" style="display: flex;">
                 <label>Selected League:</label>
-                <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
-                    <div id="league-selected-display"
-                        style="flex: 1; padding: 8px; background: var(--bg-secondary); border-radius: 4px; font-weight: 500;">
+                <div class="selected-league-wrapper">
+                    <div id="league-selected-display" class="selected-league-display">
                         None
                     </div>
-                    <button class="btn btn-secondary" onclick="clearLeagueSelectionInLeagueTab()"
+                    <button class="selected-league-clear-btn" onclick="clearLeagueSelectionInLeagueTab()"
                         title="Clear selection">✕</button>
                 </div>
             </div>
