@@ -109,8 +109,8 @@ app.post('/api.php', async (req, res) => {
                 break;
 
             case 'getPlayerMappings':
-                // Player mapping table not implemented yet - return empty array
-                res.json({ success: true, data: [] });
+                const [playerMappings] = await pool.query('SELECT * FROM player_mapping ORDER BY name');
+                res.json({ success: true, data: playerMappings });
                 break;
 
             case 'addLeagueMapping':

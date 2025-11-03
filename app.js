@@ -60,8 +60,9 @@ function initializeTabs() {
                 if (selectedLeague) {
                     selectedLeagueForTeams = selectedLeague;
                     updateLeagueFilterInput();
-                    loadTeamsForLeague();
                 }
+                // Always load teams (will show all if no league selected, or filtered if league is selected)
+                loadTeamsForLeague();
             } else if (tabName === 'leagues') {
                 leagueFilterContainer.style.display = 'none';
                 leagueSelectedContainer.style.display = 'flex';
@@ -944,23 +945,17 @@ function showNotification(message, type = 'success') {
 
 // Autocomplete functions for league filter
 function showLeagueDropdown() {
-    const sportId = document.getElementById('global-sport-filter').value;
-    if (!sportId) {
-        showNotification('Please select a sport first', 'error');
-        return;
-    }
     filterLeagueDropdown();
 }
 
 function filterLeagueDropdown() {
     const sportId = document.getElementById('global-sport-filter').value;
-    if (!sportId) return;
-
     const input = document.getElementById('team-league-filter');
     const dropdown = document.getElementById('league-dropdown');
     const searchTerm = input.value.toLowerCase();
 
-    let filteredLeagues = leagues.filter(l => l.sport_id == sportId);
+    // Filter by sport if selected, otherwise show all leagues
+    let filteredLeagues = sportId ? leagues.filter(l => l.sport_id == sportId) : leagues;
 
     if (searchTerm) {
         filteredLeagues = filteredLeagues.filter(l =>
