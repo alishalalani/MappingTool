@@ -66,11 +66,10 @@
             </div>
             <div class="filter-group autocomplete-container" id="team-league-filter-container" style="display: none;">
                 <label>Select League:</label>
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="filter-input-wrapper">
                     <input type="text" id="team-league-filter" placeholder="Type to search leagues..."
-                        autocomplete="off" oninput="filterLeagueDropdown()" onfocus="showLeagueDropdown()"
-                        style="flex: 1;" />
-                    <button class="btn btn-secondary" onclick="clearLeagueSelection()"
+                        autocomplete="off" oninput="filterLeagueDropdown()" onfocus="showLeagueDropdown()" />
+                    <button class="filter-clear-btn" onclick="clearLeagueSelection()"
                         title="Clear selection">✕</button>
                 </div>
                 <div id="league-dropdown" class="autocomplete-dropdown"></div>
@@ -79,22 +78,20 @@
                 <div style="display: flex; gap: 16px; align-items: flex-start;">
                     <div class="filter-group autocomplete-container" style="flex: 1;">
                         <label>Select League:</label>
-                        <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="filter-input-wrapper">
                             <input type="text" id="player-league-filter" placeholder="Type to search leagues..."
-                                autocomplete="off" oninput="filterPlayerLeagueDropdown()" onfocus="showPlayerLeagueDropdown()"
-                                style="flex: 1;" />
-                            <button class="btn btn-secondary" onclick="clearPlayerLeagueSelection()"
+                                autocomplete="off" oninput="filterPlayerLeagueDropdown()" onfocus="showPlayerLeagueDropdown()" />
+                            <button class="filter-clear-btn" onclick="clearPlayerLeagueSelection()"
                                 title="Clear selection">✕</button>
                         </div>
                         <div id="player-league-dropdown" class="autocomplete-dropdown"></div>
                     </div>
                     <div class="filter-group autocomplete-container" style="flex: 1;">
                         <label>Select Team:</label>
-                        <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="filter-input-wrapper">
                             <input type="text" id="player-team-filter" placeholder="Type to search teams..."
-                                autocomplete="off" oninput="filterPlayerTeamDropdown()" onfocus="showPlayerTeamDropdown()"
-                                style="flex: 1;" />
-                            <button class="btn btn-secondary" onclick="clearPlayerTeamSelection()"
+                                autocomplete="off" oninput="filterPlayerTeamDropdown()" onfocus="showPlayerTeamDropdown()" />
+                            <button class="filter-clear-btn" onclick="clearPlayerTeamSelection()"
                                 title="Clear selection">✕</button>
                         </div>
                         <div id="player-team-dropdown" class="autocomplete-dropdown"></div>

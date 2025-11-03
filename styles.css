@@ -226,6 +226,49 @@ header {
     color: var(--danger-color);
 }
 
+/* Filter Input Clear Button - Same style for autocomplete inputs */
+.filter-input-wrapper {
+    position: relative;
+    display: flex;
+    flex: 1;
+}
+
+.filter-input-wrapper input {
+    flex: 1;
+    padding-right: 2.5rem !important;
+}
+
+.filter-clear-btn {
+    position: absolute;
+    right: 0.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.3rem;
+    opacity: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+}
+
+.filter-input-wrapper:hover .filter-clear-btn {
+    opacity: 1;
+}
+
+.filter-clear-btn:hover {
+    background: var(--border-color);
+    color: var(--danger-color);
+}
+
 #global-search:focus {
     outline: none;
     border-color: var(--primary-color);
