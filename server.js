@@ -113,6 +113,70 @@ app.post('/api.php', async (req, res) => {
                 res.json({ success: true, data: playerMappings });
                 break;
 
+            case 'addPlayer':
+                const { first_name: newPlayerFirstName, last_name: newPlayerLastName, position_id: newPlayerPositionId, left_handed: newPlayerLeftHanded, team_ids: newPlayerTeamIds } = req.body;
+
+                // Create the player name from first_name and last_name
+                const newPlayerName = `${newPlayerFirstName} ${newPlayerLastName}`;
+
+                const [newPlayerResult] = await pool.query(
+                    'INSERT INTO player (name, first_name, last_name, position_id, left_handed) VALUES (?, ?, ?, ?, ?)',
+                    [newPlayerName, newPlayerFirstName, newPlayerLastName, newPlayerPositionId || null, newPlayerLeftHanded || 0]
+                );
+                const newPlayerId = newPlayerResult.insertId;
+
+                // Add team_player associations if team_ids provided
+                if (newPlayerTeamIds && Array.isArray(newPlayerTeamIds) && newPlayerTeamIds.length > 0) {
+                    const teamPlayerValues = newPlayerTeamIds.map(teamId => [teamId, newPlayerId]);
+                    await pool.query('INSERT INTO team_player (team_id, player_id) VALUES ?', [teamPlayerValues]);
+                }
+
+                res.json({
+                    success: true,
+                    data: { id: newPlayerId },
+                    message: 'Player added successfully'
+                });
+                break;
+
+            case 'updatePlayer':
+                const { id: updatePlayerIdPk, first_name: updatePlayerFirstName, last_name: updatePlayerLastName, position_id: updatePlayerPositionId, left_handed: updatePlayerLeftHanded, team_ids: updatePlayerTeamIds } = req.body;
+
+                // Create the player name from first_name and last_name
+                const updatePlayerName = `${updatePlayerFirstName} ${updatePlayerLastName}`;
+
+                await pool.query(
+                    'UPDATE player SET name = ?, first_name = ?, last_name = ?, position_id = ?, left_handed = ? WHERE id = ?',
+                    [updatePlayerName, updatePlayerFirstName, updatePlayerLastName, updatePlayerPositionId || null, updatePlayerLeftHanded || 0, updatePlayerIdPk]
+                );
+
+                // Update team_player associations
+                // First delete existing associations
+                await pool.query('DELETE FROM team_player WHERE player_id = ?', [updatePlayerIdPk]);
+
+                // Then add new associations if provided
+                if (updatePlayerTeamIds && Array.isArray(updatePlayerTeamIds) && updatePlayerTeamIds.length > 0) {
+                    const teamPlayerValues = updatePlayerTeamIds.map(teamId => [teamId, updatePlayerIdPk]);
+                    await pool.query('INSERT INTO team_player (team_id, player_id) VALUES ?', [teamPlayerValues]);
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Player updated successfully'
+                });
+                break;
+
+            case 'deletePlayer':
+                const { id: deletePlayerId } = req.body;
+                // Delete team_player associations first
+                await pool.query('DELETE FROM team_player WHERE player_id = ?', [deletePlayerId]);
+                // Then delete the player
+                await pool.query('DELETE FROM player WHERE id = ?', [deletePlayerId]);
+                res.json({
+                    success: true,
+                    message: 'Player deleted successfully'
+                });
+                break;
+
             case 'addLeague':
                 const { name: newLeagueName, fullname: newLeagueFullname, abbr: newLeagueAbbr, sport_id: newLeagueSportId, active: newLeagueActive } = req.body;
                 const [newLeagueResult] = await pool.query(

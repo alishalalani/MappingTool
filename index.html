@@ -363,29 +363,27 @@
                     <input type="text" id="player-last-name" placeholder="Enter last name">
                 </div>
                 <div class="form-group">
-                    <label>Display Name:</label>
-                    <input type="text" id="player-display-name" placeholder="Enter display name (optional)">
-                </div>
-                <div class="form-group">
                     <label>Position:</label>
                     <select id="player-position-id">
                         <option value="">Select position...</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Left Handed:</label>
-                    <input type="checkbox" id="player-left-handed">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="player-left-handed" style="margin: 0; width: auto;">
+                        <span>Left Handed</span>
+                    </label>
                 </div>
                 <div class="form-group">
                     <label>Teams:</label>
                     <div class="team-selection-container">
-                        <div class="filter-group autocomplete-container" style="margin-bottom: 8px;">
-                            <input type="text" id="player-teams-search" placeholder="Search teams..."
-                                autocomplete="off" oninput="filterPlayerTeamsDropdown()" onfocus="showPlayerTeamsDropdown()" />
+                        <div class="filter-group autocomplete-container">
+                            <div class="filter-input-wrapper">
+                                <input type="text" id="player-teams-search" placeholder="Search teams..."
+                                    autocomplete="off" oninput="filterPlayerTeamsDropdown()" onfocus="showPlayerTeamsDropdown()" />
+                                <button class="filter-clear-btn" onclick="clearPlayerTeamsSelection()" title="Clear selection">✕</button>
+                            </div>
                             <div id="player-teams-dropdown" class="autocomplete-dropdown"></div>
-                        </div>
-                        <div id="player-teams-selected" class="selected-items-container">
-                            <!-- Selected teams will appear here as tags -->
                         </div>
                     </div>
                 </div>
