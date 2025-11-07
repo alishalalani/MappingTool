@@ -190,6 +190,8 @@
                     <div class="column-header">
                         <h3>Players</h3>
                         <span class="count-badge" id="players-count">0</span>
+                        <button class="btn btn-primary btn-sm" id="add-player-btn"
+                            onclick="showAddPlayerModal()">+ Add Player</button>
                     </div>
                     <div class="column-content" id="players-list">
                         <div class="empty-state-small">Select a team</div>
@@ -340,6 +342,56 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="saveTeam()">Save Team</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Add/Edit Modal -->
+    <div id="player-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="player-modal-title">Add Player</h3>
+                <span class="close" onclick="closePlayerModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>First Name:</label>
+                    <input type="text" id="player-first-name" placeholder="Enter first name">
+                </div>
+                <div class="form-group">
+                    <label>Last Name:</label>
+                    <input type="text" id="player-last-name" placeholder="Enter last name">
+                </div>
+                <div class="form-group">
+                    <label>Display Name:</label>
+                    <input type="text" id="player-display-name" placeholder="Enter display name (optional)">
+                </div>
+                <div class="form-group">
+                    <label>Position:</label>
+                    <select id="player-position-id">
+                        <option value="">Select position...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Left Handed:</label>
+                    <input type="checkbox" id="player-left-handed">
+                </div>
+                <div class="form-group">
+                    <label>Teams:</label>
+                    <div class="team-selection-container">
+                        <div class="filter-group autocomplete-container" style="margin-bottom: 8px;">
+                            <input type="text" id="player-teams-search" placeholder="Search teams..."
+                                autocomplete="off" oninput="filterPlayerTeamsDropdown()" onfocus="showPlayerTeamsDropdown()" />
+                            <div id="player-teams-dropdown" class="autocomplete-dropdown"></div>
+                        </div>
+                        <div id="player-teams-selected" class="selected-items-container">
+                            <!-- Selected teams will appear here as tags -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="savePlayer()">Save Player</button>
             </div>
         </div>
     </div>

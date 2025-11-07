@@ -658,9 +658,17 @@ function loadPlayersForTeam(searchTerm = '') {
     } else {
         const playersHtml = filteredPlayers.map(player => {
             const isActive = selectedPlayer && selectedPlayer.id == player.id;
+            const displayName = player.display_name || `${player.first_name} ${player.last_name}`;
+            const highlightedName = highlightText(displayName, currentSearchFilter === 'all' || currentSearchFilter === 'items' ? searchTerm : '');
             return `
                 <div class="list-item ${isActive ? 'active' : ''}" onclick="selectPlayer(${player.id})">
-                    <div class="list-item-name">${highlightText(player.display_name || `${player.first_name} ${player.last_name}`, currentSearchFilter === 'all' || currentSearchFilter === 'items' ? searchTerm : '')}</div>
+                    <div class="list-item-content">
+                        <div class="list-item-name">${highlightedName}</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon" onclick="showEditPlayerModal(${player.id}); event.stopPropagation();" title="Edit player">✏️</button>
+                        <button class="btn-icon" onclick="deletePlayer(${player.id}); event.stopPropagation();" title="Delete player">🗑️</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -1195,6 +1203,213 @@ async function deleteTeam(teamId) {
         }
 
         showNotification('Team deleted successfully', 'success');
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+}
+
+// ===== PLAYER ADD/EDIT MODAL FUNCTIONS =====
+let currentEditingPlayer = null;
+let selectedPlayerTeamIds = [];
+
+function showAddPlayerModal() {
+    currentEditingPlayer = null;
+    selectedPlayerTeamIds = [];
+
+    document.getElementById('player-modal-title').textContent = 'Add Player';
+    document.getElementById('player-first-name').value = '';
+    document.getElementById('player-last-name').value = '';
+    document.getElementById('player-display-name').value = '';
+    document.getElementById('player-left-handed').checked = false;
+    document.getElementById('player-teams-search').value = '';
+
+    // Populate position dropdown
+    const positionSelect = document.getElementById('player-position-id');
+    positionSelect.innerHTML = '<option value="">Select position...</option>' +
+        positions.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    // Clear selected teams
+    updatePlayerTeamsDisplay();
+
+    document.getElementById('player-modal').classList.add('active');
+}
+
+function showEditPlayerModal(playerId) {
+    const player = players.find(p => p.id == playerId);
+    if (!player) return;
+
+    currentEditingPlayer = player;
+    document.getElementById('player-modal-title').textContent = 'Edit Player';
+    document.getElementById('player-first-name').value = player.first_name || '';
+    document.getElementById('player-last-name').value = player.last_name || '';
+    document.getElementById('player-display-name').value = player.display_name || '';
+    document.getElementById('player-left-handed').checked = player.left_handed == 1;
+    document.getElementById('player-teams-search').value = '';
+
+    // Populate position dropdown
+    const positionSelect = document.getElementById('player-position-id');
+    positionSelect.innerHTML = '<option value="">Select position...</option>' +
+        positions.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    if (player.position_id) {
+        positionSelect.value = player.position_id;
+    }
+
+    // Load player's teams
+    selectedPlayerTeamIds = teamPlayers
+        .filter(tp => tp.player_id == playerId)
+        .map(tp => tp.team_id);
+
+    updatePlayerTeamsDisplay();
+
+    document.getElementById('player-modal').classList.add('active');
+}
+
+function closePlayerModal() {
+    document.getElementById('player-modal').classList.remove('active');
+    document.getElementById('player-teams-dropdown').style.display = 'none';
+    currentEditingPlayer = null;
+    selectedPlayerTeamIds = [];
+}
+
+function filterPlayerTeamsDropdown() {
+    const searchTerm = document.getElementById('player-teams-search').value.toLowerCase();
+    const dropdown = document.getElementById('player-teams-dropdown');
+
+    const filteredTeams = teams.filter(t =>
+        t.full_name.toLowerCase().includes(searchTerm) ||
+        t.name.toLowerCase().includes(searchTerm) ||
+        t.abbr.toLowerCase().includes(searchTerm)
+    );
+
+    if (filteredTeams.length === 0) {
+        dropdown.innerHTML = '<div class="autocomplete-item">No teams found</div>';
+    } else {
+        dropdown.innerHTML = filteredTeams.map(t => `
+            <div class="autocomplete-item ${selectedPlayerTeamIds.includes(t.id) ? 'selected' : ''}"
+                 onclick="togglePlayerTeam(${t.id})">
+                ${t.full_name}
+                ${selectedPlayerTeamIds.includes(t.id) ? '<span style="float: right;">✓</span>' : ''}
+            </div>
+        `).join('');
+    }
+    dropdown.style.display = 'block';
+}
+
+function showPlayerTeamsDropdown() {
+    filterPlayerTeamsDropdown();
+}
+
+function togglePlayerTeam(teamId) {
+    const index = selectedPlayerTeamIds.indexOf(teamId);
+    if (index > -1) {
+        selectedPlayerTeamIds.splice(index, 1);
+    } else {
+        selectedPlayerTeamIds.push(teamId);
+    }
+    updatePlayerTeamsDisplay();
+    filterPlayerTeamsDropdown();
+}
+
+function removePlayerTeam(teamId) {
+    const index = selectedPlayerTeamIds.indexOf(teamId);
+    if (index > -1) {
+        selectedPlayerTeamIds.splice(index, 1);
+    }
+    updatePlayerTeamsDisplay();
+}
+
+function updatePlayerTeamsDisplay() {
+    const container = document.getElementById('player-teams-selected');
+    if (selectedPlayerTeamIds.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-secondary); font-size: 14px;">No teams selected</div>';
+    } else {
+        container.innerHTML = selectedPlayerTeamIds.map(teamId => {
+            const team = teams.find(t => t.id == teamId);
+            return team ? `
+                <div class="selected-item-tag">
+                    ${team.full_name}
+                    <span class="remove-tag" onclick="removePlayerTeam(${teamId}); event.stopPropagation();">×</span>
+                </div>
+            ` : '';
+        }).join('');
+    }
+}
+
+async function savePlayer() {
+    const first_name = document.getElementById('player-first-name').value.trim();
+    const last_name = document.getElementById('player-last-name').value.trim();
+    const display_name = document.getElementById('player-display-name').value.trim();
+    const position_id = document.getElementById('player-position-id').value;
+    const left_handed = document.getElementById('player-left-handed').checked ? 1 : 0;
+
+    // Get selected team IDs
+    const team_ids = selectedPlayerTeamIds;
+
+    if (!first_name || !last_name) {
+        showNotification('Please fill in at least First Name and Last Name', 'error');
+        return;
+    }
+
+    try {
+        let newPlayerId = null;
+        if (currentEditingPlayer) {
+            // Update existing player
+            await apiCall('updatePlayer', {
+                id: currentEditingPlayer.id,
+                first_name,
+                last_name,
+                display_name,
+                position_id: position_id || null,
+                left_handed,
+                team_ids
+            });
+            showNotification('Player updated successfully', 'success');
+        } else {
+            // Add new player
+            const result = await apiCall('addPlayer', {
+                first_name,
+                last_name,
+                display_name,
+                position_id: position_id || null,
+                left_handed,
+                team_ids
+            });
+            newPlayerId = result.id;
+            showNotification('Player added successfully', 'success');
+        }
+
+        await loadPlayers();
+        await loadTeamPlayers();
+        loadPlayersForTeam();
+        closePlayerModal();
+
+        // Highlight and scroll to newly added player
+        if (newPlayerId) {
+            setTimeout(() => {
+                highlightAndScrollToRow('players-list', newPlayerId);
+            }, 100);
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+}
+
+async function deletePlayer(playerId) {
+    if (!confirm('Are you sure you want to delete this player? This action cannot be undone.')) return;
+
+    try {
+        await apiCall('deletePlayer', { id: playerId });
+        await loadPlayers();
+        await loadTeamPlayers();
+        loadPlayersForTeam();
+
+        // Clear selection if the deleted player was selected
+        if (selectedPlayer && selectedPlayer.id == playerId) {
+            selectedPlayer = null;
+        }
+
+        showNotification('Player deleted successfully', 'success');
     } catch (error) {
         showNotification('Error: ' + error.message, 'error');
     }
