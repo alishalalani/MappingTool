@@ -682,7 +682,6 @@ function loadPlayersForTeam(searchTerm = '') {
                 <div class="list-item">
                     <div class="list-item-main">
                         <div class="list-item-name">${highlightText(mapping.name, currentSearchFilter === 'all' || currentSearchFilter === 'mapped' ? searchTerm : '')}</div>
-                        <div class="list-item-id">Mapping ID: ${mapping.id}</div>
                     </div>
                     <button class="btn btn-danger btn-sm" onclick="deletePlayerMapping(${mapping.id})">Delete</button>
                 </div>
