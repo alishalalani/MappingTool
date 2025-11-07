@@ -318,12 +318,14 @@
                     <input type="text" id="team-abbr" placeholder="Enter abbreviation (e.g., PIT)">
                 </div>
                 <div class="form-group">
-                    <label>Abbreviation Parser:</label>
-                    <input type="text" id="team-abbr-parser" placeholder="Enter parser abbreviation (e.g., PIT)">
-                </div>
-                <div class="form-group">
                     <label>Full Name:</label>
                     <input type="text" id="team-full-name" placeholder="Enter full name (e.g., Pittsburgh Steelers)">
+                </div>
+                <div class="form-group">
+                    <label>Sport:</label>
+                    <select id="team-sport-filter" onchange="filterTeamLeaguesBySport()">
+                        <option value="">All Sports</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Leagues:</label>

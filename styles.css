@@ -1325,3 +1325,18 @@ tbody td.loading {
         min-height: 300px;
     }
 }
+
+/* Row highlight animation for newly added items */
+.row-highlight {
+    background-color: rgba(76, 175, 80, 0.3) !important;
+    animation: highlightFade 3s ease-out;
+}
+
+@keyframes highlightFade {
+    0% {
+        background-color: rgba(76, 175, 80, 0.5);
+    }
+    100% {
+        background-color: transparent;
+    }
+}

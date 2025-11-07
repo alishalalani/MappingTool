@@ -845,6 +845,7 @@ async function saveLeague() {
     }
 
     try {
+        let newLeagueId = null;
         if (currentEditingLeague) {
             // Update existing league
             await apiCall('updateLeague', {
@@ -858,19 +859,27 @@ async function saveLeague() {
             showNotification('League updated successfully', 'success');
         } else {
             // Add new league
-            await apiCall('addLeague', {
+            const result = await apiCall('addLeague', {
                 name,
                 fullname,
                 abbr,
                 sport_id,
                 active
             });
+            newLeagueId = result.id;
             showNotification('League added successfully', 'success');
         }
 
         await loadLeagues();
         loadLeaguesForSport();
         closeLeagueModal();
+
+        // Highlight and scroll to newly added league
+        if (newLeagueId) {
+            setTimeout(() => {
+                highlightAndScrollToRow('leagues-list', newLeagueId);
+            }, 100);
+        }
     } catch (error) {
         showNotification('Error: ' + error.message, 'error');
     }
@@ -909,9 +918,19 @@ function showAddTeamModal() {
     document.getElementById('team-first-name').value = '';
     document.getElementById('team-nickname').value = '';
     document.getElementById('team-abbr').value = '';
-    document.getElementById('team-abbr-parser').value = '';
     document.getElementById('team-full-name').value = '';
     document.getElementById('team-leagues-search').value = '';
+
+    // Populate sport dropdown
+    const sportSelect = document.getElementById('team-sport-filter');
+    sportSelect.innerHTML = '<option value="">All Sports</option>' +
+        sports.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+    // Set to currently selected sport if any
+    const selectedSportId = document.getElementById('global-sport-filter').value;
+    if (selectedSportId) {
+        sportSelect.value = selectedSportId;
+    }
 
     // Setup league search
     setupLeagueSearch();
@@ -934,9 +953,19 @@ function showEditTeamModal(teamId) {
     document.getElementById('team-first-name').value = team.first_name || '';
     document.getElementById('team-nickname').value = team.nickname || '';
     document.getElementById('team-abbr').value = team.abbr || '';
-    document.getElementById('team-abbr-parser').value = team.abbr_parser || '';
     document.getElementById('team-full-name').value = team.full_name || '';
     document.getElementById('team-leagues-search').value = '';
+
+    // Populate sport dropdown
+    const sportSelect = document.getElementById('team-sport-filter');
+    sportSelect.innerHTML = '<option value="">All Sports</option>' +
+        sports.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+    // Set to currently selected sport if any
+    const selectedSportId = document.getElementById('global-sport-filter').value;
+    if (selectedSportId) {
+        sportSelect.value = selectedSportId;
+    }
 
     // Setup league search
     setupLeagueSearch();
@@ -971,11 +1000,19 @@ function filterAndShowLeagues(searchTerm) {
     const dropdown = document.getElementById('team-leagues-dropdown');
     const lowerSearch = searchTerm.toLowerCase();
 
+    // Get selected sport filter
+    const selectedSportId = document.getElementById('team-sport-filter').value;
+
     // Group leagues by sport
     const leaguesBySport = {};
     leagues.forEach(league => {
         // Skip already selected leagues
         if (selectedTeamLeagueIds.includes(league.id)) return;
+
+        // Filter by sport if selected
+        if (selectedSportId && league.sport_id != selectedSportId) {
+            return;
+        }
 
         // Filter by search term
         if (searchTerm && !league.fullname.toLowerCase().includes(lowerSearch) &&
@@ -1039,6 +1076,17 @@ function removeLeagueFromTeam(leagueId) {
     }
 }
 
+function filterTeamLeaguesBySport() {
+    // Refresh the leagues dropdown when sport filter changes
+    const searchInput = document.getElementById('team-leagues-search');
+    const dropdown = document.getElementById('team-leagues-dropdown');
+
+    // If dropdown is visible, refresh it
+    if (dropdown.style.display === 'block') {
+        filterAndShowLeagues(searchInput.value);
+    }
+}
+
 function updateSelectedLeaguesTags() {
     const container = document.getElementById('team-selected-leagues');
 
@@ -1074,7 +1122,6 @@ async function saveTeam() {
     const first_name = document.getElementById('team-first-name').value.trim();
     const nickname = document.getElementById('team-nickname').value.trim();
     const abbr = document.getElementById('team-abbr').value.trim();
-    const abbr_parser = document.getElementById('team-abbr-parser').value.trim();
     const full_name = document.getElementById('team-full-name').value.trim();
 
     // Get selected league IDs
@@ -1087,6 +1134,7 @@ async function saveTeam() {
     }
 
     try {
+        let newTeamId = null;
         if (currentEditingTeam) {
             // Update existing team
             await apiCall('updateTeam', {
@@ -1095,7 +1143,7 @@ async function saveTeam() {
                 first_name,
                 nickname,
                 abbr,
-                abbr_parser,
+                abbr_parser: '',
                 full_name,
                 location_id: null,
                 league_ids
@@ -1103,16 +1151,17 @@ async function saveTeam() {
             showNotification('Team updated successfully', 'success');
         } else {
             // Add new team
-            await apiCall('addTeam', {
+            const result = await apiCall('addTeam', {
                 name,
                 first_name,
                 nickname,
                 abbr,
-                abbr_parser,
+                abbr_parser: '',
                 full_name,
                 location_id: null,
                 league_ids
             });
+            newTeamId = result.id;
             showNotification('Team added successfully', 'success');
         }
 
@@ -1120,6 +1169,13 @@ async function saveTeam() {
         await loadLeagueTeams();
         loadTeamsForLeague();
         closeTeamModal();
+
+        // Highlight and scroll to newly added team
+        if (newTeamId) {
+            setTimeout(() => {
+                highlightAndScrollToRow('teams-list', newTeamId);
+            }, 100);
+        }
     } catch (error) {
         showNotification('Error: ' + error.message, 'error');
     }
@@ -1665,5 +1721,39 @@ async function mapPlayerMapping(mappingId, playerId) {
     } catch (error) {
         showNotification('Failed to update mapping: ' + error.message, 'error');
     }
+}
+
+// Utility function to highlight and scroll to a newly added item
+function highlightAndScrollToRow(containerId, itemId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Find the item with the matching data-id attribute or onclick with the ID
+    let item = container.querySelector(`[data-id="${itemId}"]`);
+
+    // If not found by data-id, try finding by onclick attribute
+    if (!item) {
+        const items = container.querySelectorAll('.list-item');
+        for (const listItem of items) {
+            const onclickAttr = listItem.getAttribute('onclick');
+            if (onclickAttr && onclickAttr.includes(`(${itemId})`)) {
+                item = listItem;
+                break;
+            }
+        }
+    }
+
+    if (!item) return;
+
+    // Add highlight class
+    item.classList.add('row-highlight');
+
+    // Scroll the item into view
+    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Remove highlight after 3 seconds
+    setTimeout(() => {
+        item.classList.remove('row-highlight');
+    }, 3000);
 }
 
