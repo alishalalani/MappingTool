@@ -501,8 +501,14 @@ function loadTeamsForLeague(searchTerm = '') {
             const highlightedAbbr = shouldHighlight ? highlightText(team.abbr || '', searchTerm) : (team.abbr || '');
             return `
                 <div class="list-item ${selectedTeam && selectedTeam.id === team.id ? 'active' : ''}" onclick="selectTeam(${team.id})">
-                    <div class="list-item-name">${highlightedName}</div>
-                    <div class="list-item-abbr">${highlightedAbbr}</div>
+                    <div class="list-item-content">
+                        <div class="list-item-name">${highlightedName}</div>
+                        <div class="list-item-abbr">${highlightedAbbr}</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon" onclick="showEditTeamModal(${team.id}); event.stopPropagation();" title="Edit team">✏️</button>
+                        <button class="btn-icon" onclick="deleteTeam(${team.id}); event.stopPropagation();" title="Delete team">🗑️</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -885,6 +891,255 @@ async function deleteLeague(leagueId) {
         }
 
         showNotification('League deleted successfully', 'success');
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+}
+
+// ===== TEAM ADD/EDIT MODAL FUNCTIONS =====
+let currentEditingTeam = null;
+let selectedTeamLeagueIds = [];
+
+function showAddTeamModal() {
+    currentEditingTeam = null;
+    selectedTeamLeagueIds = [];
+
+    document.getElementById('team-modal-title').textContent = 'Add Team';
+    document.getElementById('team-name').value = '';
+    document.getElementById('team-first-name').value = '';
+    document.getElementById('team-nickname').value = '';
+    document.getElementById('team-abbr').value = '';
+    document.getElementById('team-abbr-parser').value = '';
+    document.getElementById('team-full-name').value = '';
+    document.getElementById('team-leagues-search').value = '';
+
+    // Setup league search
+    setupLeagueSearch();
+    updateSelectedLeaguesTags();
+
+    document.getElementById('team-modal').classList.add('active');
+}
+
+function showEditTeamModal(teamId) {
+    const team = teams.find(t => t.id == teamId);
+    if (!team) return;
+
+    currentEditingTeam = team;
+
+    // Get leagues this team belongs to
+    selectedTeamLeagueIds = leagueTeams.filter(lt => lt.team_id == teamId).map(lt => lt.league_id);
+
+    document.getElementById('team-modal-title').textContent = 'Edit Team';
+    document.getElementById('team-name').value = team.name || '';
+    document.getElementById('team-first-name').value = team.first_name || '';
+    document.getElementById('team-nickname').value = team.nickname || '';
+    document.getElementById('team-abbr').value = team.abbr || '';
+    document.getElementById('team-abbr-parser').value = team.abbr_parser || '';
+    document.getElementById('team-full-name').value = team.full_name || '';
+    document.getElementById('team-leagues-search').value = '';
+
+    // Setup league search
+    setupLeagueSearch();
+    updateSelectedLeaguesTags();
+
+    document.getElementById('team-modal').classList.add('active');
+}
+
+function setupLeagueSearch() {
+    const searchInput = document.getElementById('team-leagues-search');
+    const dropdown = document.getElementById('team-leagues-dropdown');
+
+    // Show dropdown on focus
+    searchInput.addEventListener('focus', () => {
+        filterAndShowLeagues('');
+    });
+
+    // Filter as user types
+    searchInput.addEventListener('input', (e) => {
+        filterAndShowLeagues(e.target.value);
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#team-leagues-search') && !e.target.closest('#team-leagues-dropdown')) {
+            dropdown.style.display = 'none';
+        }
+    });
+}
+
+function filterAndShowLeagues(searchTerm) {
+    const dropdown = document.getElementById('team-leagues-dropdown');
+    const lowerSearch = searchTerm.toLowerCase();
+
+    // Group leagues by sport
+    const leaguesBySport = {};
+    leagues.forEach(league => {
+        // Skip already selected leagues
+        if (selectedTeamLeagueIds.includes(league.id)) return;
+
+        // Filter by search term
+        if (searchTerm && !league.fullname.toLowerCase().includes(lowerSearch) &&
+            !league.abbr.toLowerCase().includes(lowerSearch)) {
+            return;
+        }
+
+        const sport = sports.find(s => s.id == league.sport_id);
+        const sportName = sport ? sport.name : 'Unknown';
+        if (!leaguesBySport[sportName]) {
+            leaguesBySport[sportName] = [];
+        }
+        leaguesBySport[sportName].push(league);
+    });
+
+    // Build HTML
+    let html = '';
+    const sortedSports = Object.keys(leaguesBySport).sort();
+
+    if (sortedSports.length === 0) {
+        html = '<div class="leagues-dropdown-item" style="color: var(--text-secondary);">No leagues found</div>';
+    } else {
+        sortedSports.forEach(sportName => {
+            html += `<div class="leagues-dropdown-sport-header">${sportName}</div>`;
+            leaguesBySport[sportName].forEach(league => {
+                html += `
+                    <div class="leagues-dropdown-item" onclick="addLeagueToTeam(${league.id})">
+                        ${league.fullname} (${league.abbr})
+                    </div>
+                `;
+            });
+        });
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+}
+
+function addLeagueToTeam(leagueId) {
+    if (!selectedTeamLeagueIds.includes(leagueId)) {
+        selectedTeamLeagueIds.push(leagueId);
+        updateSelectedLeaguesTags();
+
+        // Clear search and refresh dropdown
+        const searchInput = document.getElementById('team-leagues-search');
+        searchInput.value = '';
+        filterAndShowLeagues('');
+        searchInput.focus();
+    }
+}
+
+function removeLeagueFromTeam(leagueId) {
+    selectedTeamLeagueIds = selectedTeamLeagueIds.filter(id => id !== leagueId);
+    updateSelectedLeaguesTags();
+
+    // Refresh dropdown if it's open
+    const dropdown = document.getElementById('team-leagues-dropdown');
+    if (dropdown.style.display === 'block') {
+        const searchInput = document.getElementById('team-leagues-search');
+        filterAndShowLeagues(searchInput.value);
+    }
+}
+
+function updateSelectedLeaguesTags() {
+    const container = document.getElementById('team-selected-leagues');
+
+    if (selectedTeamLeagueIds.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.75rem;">No leagues selected</div>';
+        return;
+    }
+
+    const html = selectedTeamLeagueIds.map(leagueId => {
+        const league = leagues.find(l => l.id == leagueId);
+        if (!league) return '';
+
+        return `
+            <div class="league-tag">
+                ${league.abbr}
+                <span class="league-tag-remove" onclick="removeLeagueFromTeam(${leagueId})">&times;</span>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+function closeTeamModal() {
+    document.getElementById('team-modal').classList.remove('active');
+    document.getElementById('team-leagues-dropdown').style.display = 'none';
+    currentEditingTeam = null;
+    selectedTeamLeagueIds = [];
+}
+
+async function saveTeam() {
+    const name = document.getElementById('team-name').value.trim();
+    const first_name = document.getElementById('team-first-name').value.trim();
+    const nickname = document.getElementById('team-nickname').value.trim();
+    const abbr = document.getElementById('team-abbr').value.trim();
+    const abbr_parser = document.getElementById('team-abbr-parser').value.trim();
+    const full_name = document.getElementById('team-full-name').value.trim();
+
+    // Get selected league IDs
+    const checkboxes = document.querySelectorAll('#team-leagues-checkboxes input[type="checkbox"]:checked');
+    const league_ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+    if (!name || !abbr) {
+        showNotification('Please fill in at least Name and Abbreviation', 'error');
+        return;
+    }
+
+    try {
+        if (currentEditingTeam) {
+            // Update existing team
+            await apiCall('updateTeam', {
+                id: currentEditingTeam.id,
+                name,
+                first_name,
+                nickname,
+                abbr,
+                abbr_parser,
+                full_name,
+                location_id: null,
+                league_ids
+            });
+            showNotification('Team updated successfully', 'success');
+        } else {
+            // Add new team
+            await apiCall('addTeam', {
+                name,
+                first_name,
+                nickname,
+                abbr,
+                abbr_parser,
+                full_name,
+                location_id: null,
+                league_ids
+            });
+            showNotification('Team added successfully', 'success');
+        }
+
+        await loadTeams();
+        await loadLeagueTeams();
+        loadTeamsForLeague();
+        closeTeamModal();
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+}
+
+async function deleteTeam(teamId) {
+    if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) return;
+
+    try {
+        await apiCall('deleteTeam', { id: teamId });
+        await loadTeams();
+        await loadLeagueTeams();
+        loadTeamsForLeague();
+
+        // Clear selection if the deleted team was selected
+        if (selectedTeam && selectedTeam.id == teamId) {
+            selectedTeam = null;
+        }
+
+        showNotification('Team deleted successfully', 'success');
     } catch (error) {
         showNotification('Error: ' + error.message, 'error');
     }

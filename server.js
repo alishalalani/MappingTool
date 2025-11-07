@@ -147,6 +147,62 @@ app.post('/api.php', async (req, res) => {
                 });
                 break;
 
+            case 'addTeam':
+                const { name: newTeamName, first_name: newTeamFirstName, nickname: newTeamNickname, abbr: newTeamAbbr, abbr_parser: newTeamAbbrParser, full_name: newTeamFullName, location_id: newTeamLocationId, league_ids: newTeamLeagueIds } = req.body;
+                const [newTeamResult] = await pool.query(
+                    'INSERT INTO team (name, first_name, nickname, abbr, abbr_parser, full_name, location_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [newTeamName, newTeamFirstName, newTeamNickname, newTeamAbbr, newTeamAbbrParser, newTeamFullName, newTeamLocationId || null]
+                );
+                const newTeamId = newTeamResult.insertId;
+
+                // Add league_team associations if league_ids provided
+                if (newTeamLeagueIds && Array.isArray(newTeamLeagueIds) && newTeamLeagueIds.length > 0) {
+                    const leagueTeamValues = newTeamLeagueIds.map(leagueId => [leagueId, newTeamId]);
+                    await pool.query('INSERT INTO league_team (league_id, team_id) VALUES ?', [leagueTeamValues]);
+                }
+
+                res.json({
+                    success: true,
+                    data: { id: newTeamId },
+                    message: 'Team added successfully'
+                });
+                break;
+
+            case 'updateTeam':
+                const { id: updateTeamIdPk, name: updateTeamName, first_name: updateTeamFirstName, nickname: updateTeamNickname, abbr: updateTeamAbbr, abbr_parser: updateTeamAbbrParser, full_name: updateTeamFullName, location_id: updateTeamLocationId, league_ids: updateTeamLeagueIds } = req.body;
+                await pool.query(
+                    'UPDATE team SET name = ?, first_name = ?, nickname = ?, abbr = ?, abbr_parser = ?, full_name = ?, location_id = ? WHERE id = ?',
+                    [updateTeamName, updateTeamFirstName, updateTeamNickname, updateTeamAbbr, updateTeamAbbrParser, updateTeamFullName, updateTeamLocationId || null, updateTeamIdPk]
+                );
+
+                // Update league_team associations
+                // First delete existing associations
+                await pool.query('DELETE FROM league_team WHERE team_id = ?', [updateTeamIdPk]);
+
+                // Then add new associations if provided
+                if (updateTeamLeagueIds && Array.isArray(updateTeamLeagueIds) && updateTeamLeagueIds.length > 0) {
+                    const leagueTeamValues = updateTeamLeagueIds.map(leagueId => [leagueId, updateTeamIdPk]);
+                    await pool.query('INSERT INTO league_team (league_id, team_id) VALUES ?', [leagueTeamValues]);
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Team updated successfully'
+                });
+                break;
+
+            case 'deleteTeam':
+                const { id: deleteTeamId } = req.body;
+                // Delete league_team associations first
+                await pool.query('DELETE FROM league_team WHERE team_id = ?', [deleteTeamId]);
+                // Then delete the team
+                await pool.query('DELETE FROM team WHERE id = ?', [deleteTeamId]);
+                res.json({
+                    success: true,
+                    message: 'Team deleted successfully'
+                });
+                break;
+
             case 'addLeagueMapping':
                 const { name: leagueName, league_id } = req.body;
                 const [leagueResult] = await pool.query(
