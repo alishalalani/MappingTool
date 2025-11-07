@@ -108,6 +108,8 @@
                     <div class="column-header">
                         <h3>Leagues</h3>
                         <span class="count-badge" id="leagues-count">0</span>
+                        <button class="btn btn-primary btn-sm" id="add-league-btn"
+                            onclick="showAddLeagueModal()">+ Add League</button>
                     </div>
                     <div class="column-content" id="leagues-list">
                         <div class="empty-state-small">Select a sport</div>
@@ -246,6 +248,45 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="saveMapping()">Save Mapping</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- League Add/Edit Modal -->
+    <div id="league-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="league-modal-title">Add League</h3>
+                <span class="close" onclick="closeLeagueModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="league-name" placeholder="Enter league name (e.g., NFL)">
+                </div>
+                <div class="form-group">
+                    <label>Full Name:</label>
+                    <input type="text" id="league-fullname" placeholder="Enter full name (e.g., National Football League)">
+                </div>
+                <div class="form-group">
+                    <label>Abbreviation:</label>
+                    <input type="text" id="league-abbr" placeholder="Enter abbreviation (e.g., NFL)">
+                </div>
+                <div class="form-group">
+                    <label>Sport:</label>
+                    <select id="league-sport-id">
+                        <option value="">Select sport...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="league-active" checked>
+                        Active
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveLeague()">Save League</button>
             </div>
         </div>
     </div>

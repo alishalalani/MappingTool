@@ -113,6 +113,40 @@ app.post('/api.php', async (req, res) => {
                 res.json({ success: true, data: playerMappings });
                 break;
 
+            case 'addLeague':
+                const { name: newLeagueName, fullname: newLeagueFullname, abbr: newLeagueAbbr, sport_id: newLeagueSportId, active: newLeagueActive } = req.body;
+                const [newLeagueResult] = await pool.query(
+                    'INSERT INTO league (name, fullname, abbr, sport_id, active) VALUES (?, ?, ?, ?, ?)',
+                    [newLeagueName, newLeagueFullname, newLeagueAbbr, newLeagueSportId, newLeagueActive || 1]
+                );
+                res.json({
+                    success: true,
+                    data: { id: newLeagueResult.insertId },
+                    message: 'League added successfully'
+                });
+                break;
+
+            case 'updateLeague':
+                const { id: updateLeagueIdPk, name: updateLeagueName, fullname: updateLeagueFullname, abbr: updateLeagueAbbr, sport_id: updateLeagueSportId, active: updateLeagueActive } = req.body;
+                await pool.query(
+                    'UPDATE league SET name = ?, fullname = ?, abbr = ?, sport_id = ?, active = ? WHERE id = ?',
+                    [updateLeagueName, updateLeagueFullname, updateLeagueAbbr, updateLeagueSportId, updateLeagueActive, updateLeagueIdPk]
+                );
+                res.json({
+                    success: true,
+                    message: 'League updated successfully'
+                });
+                break;
+
+            case 'deleteLeague':
+                const { id: deleteLeagueId } = req.body;
+                await pool.query('DELETE FROM league WHERE id = ?', [deleteLeagueId]);
+                res.json({
+                    success: true,
+                    message: 'League deleted successfully'
+                });
+                break;
+
             case 'addLeagueMapping':
                 const { name: leagueName, league_id } = req.body;
                 const [leagueResult] = await pool.query(

@@ -208,6 +208,13 @@ function loadLeaguesForSport(searchTerm = '') {
 
     // Update leagues list
     document.getElementById('leagues-count').textContent = sportLeagues.length;
+
+    // Always show Add League button
+    const addLeagueBtn = document.getElementById('add-league-btn');
+    if (addLeagueBtn) {
+        addLeagueBtn.style.display = 'block';
+    }
+
     if (sportLeagues.length === 0) {
         leaguesList.innerHTML = '<div class="empty-state-small">No leagues found</div>';
     } else {
@@ -217,8 +224,14 @@ function loadLeaguesForSport(searchTerm = '') {
             const highlightedAbbr = shouldHighlight ? highlightText(league.abbr, searchTerm) : league.abbr;
             return `
                 <div class="list-item ${selectedLeague && selectedLeague.id === league.id ? 'active' : ''}" onclick="selectLeague(${league.id})">
-                    <div class="list-item-name">${highlightedName}</div>
-                    <div class="list-item-abbr">${highlightedAbbr}</div>
+                    <div class="list-item-content">
+                        <div class="list-item-name">${highlightedName}</div>
+                        <div class="list-item-abbr">${highlightedAbbr}</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon" onclick="showEditLeagueModal(${league.id}); event.stopPropagation();" title="Edit league">✏️</button>
+                        <button class="btn-icon" onclick="deleteLeague(${league.id}); event.stopPropagation();" title="Delete league">🗑️</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -759,6 +772,122 @@ function showAddPlayerMapping(positionId, positionName) {
 function closeModal() {
     document.getElementById('mapping-modal').classList.remove('active');
     currentMappingContext = null;
+}
+
+// ===== LEAGUE ADD/EDIT MODAL FUNCTIONS =====
+let currentEditingLeague = null;
+
+function showAddLeagueModal() {
+    currentEditingLeague = null;
+    document.getElementById('league-modal-title').textContent = 'Add League';
+    document.getElementById('league-name').value = '';
+    document.getElementById('league-fullname').value = '';
+    document.getElementById('league-abbr').value = '';
+    document.getElementById('league-active').checked = true;
+
+    // Get currently selected sport from the filter
+    const selectedSportId = document.getElementById('global-sport-filter').value;
+
+    // Populate sports dropdown
+    const sportSelect = document.getElementById('league-sport-id');
+    sportSelect.innerHTML = '<option value="">Select sport...</option>' +
+        sports.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+    // Pre-select the sport if one is selected
+    if (selectedSportId) {
+        sportSelect.value = selectedSportId;
+    }
+
+    document.getElementById('league-modal').classList.add('active');
+}
+
+function showEditLeagueModal(leagueId) {
+    const league = leagues.find(l => l.id == leagueId);
+    if (!league) return;
+
+    currentEditingLeague = league;
+    document.getElementById('league-modal-title').textContent = 'Edit League';
+    document.getElementById('league-name').value = league.name || '';
+    document.getElementById('league-fullname').value = league.fullname || '';
+    document.getElementById('league-abbr').value = league.abbr || '';
+    document.getElementById('league-sport-id').value = league.sport_id || '';
+    document.getElementById('league-active').checked = league.active == 1;
+
+    // Populate sports dropdown
+    const sportSelect = document.getElementById('league-sport-id');
+    sportSelect.innerHTML = '<option value="">Select sport...</option>' +
+        sports.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+    document.getElementById('league-modal').classList.add('active');
+}
+
+function closeLeagueModal() {
+    document.getElementById('league-modal').classList.remove('active');
+    currentEditingLeague = null;
+}
+
+async function saveLeague() {
+    const name = document.getElementById('league-name').value.trim();
+    const fullname = document.getElementById('league-fullname').value.trim();
+    const abbr = document.getElementById('league-abbr').value.trim();
+    const sport_id = document.getElementById('league-sport-id').value;
+    const active = document.getElementById('league-active').checked ? 1 : 0;
+
+    if (!name || !fullname || !abbr || !sport_id) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+
+    try {
+        if (currentEditingLeague) {
+            // Update existing league
+            await apiCall('updateLeague', {
+                id: currentEditingLeague.id,
+                name,
+                fullname,
+                abbr,
+                sport_id,
+                active
+            });
+            showNotification('League updated successfully', 'success');
+        } else {
+            // Add new league
+            await apiCall('addLeague', {
+                name,
+                fullname,
+                abbr,
+                sport_id,
+                active
+            });
+            showNotification('League added successfully', 'success');
+        }
+
+        await loadLeagues();
+        loadLeaguesForSport();
+        closeLeagueModal();
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+}
+
+async function deleteLeague(leagueId) {
+    if (!confirm('Are you sure you want to delete this league? This action cannot be undone.')) return;
+
+    try {
+        await apiCall('deleteLeague', { id: leagueId });
+        await loadLeagues();
+        loadLeaguesForSport();
+
+        // Clear selection if the deleted league was selected
+        if (selectedLeague && selectedLeague.id == leagueId) {
+            selectedLeague = null;
+            updateLeagueSelectedDisplay();
+        }
+
+        showNotification('League deleted successfully', 'success');
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
 }
 
 async function saveMapping() {
