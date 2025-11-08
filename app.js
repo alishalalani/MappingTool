@@ -483,9 +483,17 @@ function loadTeamsForLeague(searchTerm = '') {
             t.full_name.trim() !== ''
         );
     } else {
-        // Get team IDs for this league from league_team junction table
+        // Get the main_league_id from the selected league
+        const mainLeagueId = selectedLeagueForTeams.main_league_id;
+
+        // Find all leagues that have this main_league_id
+        const relatedLeagueIds = leagues
+            .filter(l => l.main_league_id == mainLeagueId)
+            .map(l => l.id);
+
+        // Get team IDs for all related leagues from league_team junction table
         const teamIdsForLeague = leagueTeams
-            .filter(lt => lt.league_id == leagueId)
+            .filter(lt => relatedLeagueIds.includes(lt.league_id))
             .map(lt => lt.team_id);
 
         // Filter teams by those IDs and exclude teams with empty names
