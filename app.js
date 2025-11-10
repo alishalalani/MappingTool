@@ -455,6 +455,17 @@ function clearSearchInput() {
     const searchInput = document.getElementById('global-search');
     if (searchInput) {
         searchInput.value = '';
+
+        // Clear team selection and mappings
+        if (selectedTeam) {
+            selectedTeam = null;
+        }
+
+        // Clear player selection and mappings
+        if (selectedPlayer) {
+            selectedPlayer = null;
+        }
+
         performGlobalSearch();
     }
 }
