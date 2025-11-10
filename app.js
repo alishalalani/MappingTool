@@ -310,7 +310,12 @@ function loadLeaguesForSport(searchTerm = '') {
 }
 
 function selectLeague(leagueId) {
-    selectedLeague = leagues.find(l => l.id == leagueId);
+    // Toggle selection if clicking the same league
+    if (selectedLeague && selectedLeague.id == leagueId) {
+        selectedLeague = null;
+    } else {
+        selectedLeague = leagues.find(l => l.id == leagueId);
+    }
 
     // Clear search bar
     const searchInput = document.getElementById('global-search');
@@ -603,7 +608,10 @@ function loadTeamsForLeague(searchTerm = '', applySearchToMappings = true) {
             return `
                 <div class="list-item unmapped-item" data-mapping-id="${m.id}">
                     <div class="list-item-name">${highlightedName}</div>
-                    ${selectedTeam ? `<button class="map-btn" onclick="mapTeamMapping(${m.id}, ${selectedTeam.id}); event.stopPropagation();">Map to ${teamName}</button>` : ''}
+                    <div class="list-item-actions">
+                        ${selectedTeam ? `<button class="map-btn" onclick="mapTeamMapping(${m.id}, ${selectedTeam.id}); event.stopPropagation();">Map to ${teamName}</button>` : ''}
+                        <button class="btn-icon" onclick="deleteTeamMapping(${m.id}); event.stopPropagation();" title="Delete unmapped name">🗑️</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -649,7 +657,12 @@ function loadTeamsForLeague(searchTerm = '', applySearchToMappings = true) {
 }
 
 function selectTeam(teamId) {
-    selectedTeam = teams.find(t => t.id == teamId);
+    // Toggle selection if clicking the same team
+    if (selectedTeam && selectedTeam.id == teamId) {
+        selectedTeam = null;
+    } else {
+        selectedTeam = teams.find(t => t.id == teamId);
+    }
 
     // Get current search term to maintain filtering on teams and unmapped names
     const searchTerm = document.getElementById('global-search').value.toLowerCase();
@@ -759,7 +772,12 @@ function loadPlayersForTeam(searchTerm = '') {
 }
 
 function selectPlayer(playerId) {
-    selectedPlayer = players.find(p => p.id == playerId);
+    // Toggle selection if clicking the same player
+    if (selectedPlayer && selectedPlayer.id == playerId) {
+        selectedPlayer = null;
+    } else {
+        selectedPlayer = players.find(p => p.id == playerId);
+    }
 
     // Clear search bar
     const searchInput = document.getElementById('global-search');
