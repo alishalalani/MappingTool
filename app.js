@@ -801,23 +801,21 @@ function showAddLeagueMappingModal() {
 function showAddTeamMappingModal() {
     if (!selectedTeam) return;
 
-    // Find the league_mapping_id for the selected league
-    let leagueMappingId = null;
+    // Get the league_id for the selected league
+    let leagueId = null;
     if (selectedLeagueForTeams) {
-        // Find any league_mapping that has this league_id
-        const leagueMapping = leagueMappings.find(lm => lm.league_id === selectedLeagueForTeams.id);
-        leagueMappingId = leagueMapping ? leagueMapping.id : null;
+        leagueId = selectedLeagueForTeams.id;
     }
 
     currentMappingContext = {
         type: 'team',
         id: selectedTeam.id,
-        name: selectedTeam.full_name,
-        leagueMappingId: leagueMappingId
+        name: selectedTeam.NAME || selectedTeam.full_name,
+        leagueId: leagueId
     };
     document.getElementById('modal-title').textContent = 'Add Team Mapping';
     document.getElementById('modal-selected-label').textContent = 'Selected Team:';
-    document.getElementById('modal-selected-item').textContent = selectedTeam.full_name;
+    document.getElementById('modal-selected-item').textContent = selectedTeam.NAME || selectedTeam.full_name;
     document.getElementById('modal-selected-item-group').style.display = 'block';
     document.getElementById('modal-label').textContent = 'Mapped Team Name:';
     document.getElementById('modal-unmapped-name').value = '';
@@ -1503,7 +1501,7 @@ async function saveMapping() {
             await loadLeagueMappings();
             loadLeaguesForSport();
         } else if (currentMappingContext.type === 'team') {
-            await apiCall('addTeamMapping', { name, league_mapping_id: currentMappingContext.leagueMappingId, team_id: currentMappingContext.id });
+            await apiCall('addTeamMapping', { name, league_id: currentMappingContext.leagueId, team_id: currentMappingContext.id });
             await loadTeamMappings();
             loadTeamsForLeague();
         } else if (currentMappingContext.type === 'player') {

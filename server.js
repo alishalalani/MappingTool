@@ -281,10 +281,10 @@ app.post('/api.php', async (req, res) => {
                 break;
 
             case 'addTeamMapping':
-                const { name: teamName, league_mapping_id, team_id } = req.body;
+                const { name: teamName, league_id: teamLeagueId, team_id } = req.body;
                 const [teamResult] = await pool.query(
-                    'INSERT INTO team_mapping (name, league_mapping_id, team_id) VALUES (?, ?, ?)',
-                    [teamName, league_mapping_id, team_id]
+                    'INSERT INTO team_mapping (name, league_id, team_id) VALUES (?, ?, ?)',
+                    [teamName, teamLeagueId, team_id]
                 );
                 res.json({
                     success: true,
