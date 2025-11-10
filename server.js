@@ -89,7 +89,7 @@ app.post('/api.php', async (req, res) => {
 
             case 'getTeamMappings':
                 const [teamMappings] = await pool.query(`
-                    SELECT tm.*, t.full_name, t.abbr, l.name as league_name, l.id
+                    SELECT tm.*, t.full_name, t.abbr, l.name as league_name, l.id as league_id_full
                     FROM team_mapping tm
                     LEFT JOIN team t ON tm.team_id = t.id
                     LEFT JOIN league l ON tm.league_id = l.id

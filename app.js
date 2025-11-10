@@ -154,6 +154,12 @@ function populateSportFilters() {
 function onSportChange() {
     const sportId = document.getElementById('global-sport-filter').value;
 
+    // Clear search bar
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
     // Update leagues
     loadLeaguesForSport();
 
@@ -173,11 +179,14 @@ function onSportChange() {
         filterPlayerLeagueDropdown(); // Refresh the dropdown with sport-filtered leagues
     }
 
-    // Clear teams content
-    document.getElementById('teams-content').innerHTML = '<div class="empty-state"><p>👆 Please select a league to view teams</p></div>';
+    // Reload teams filtered by sport
+    loadTeamsForLeague();
 
     // Clear players content
-    document.getElementById('players-content').innerHTML = '<div class="empty-state"><p>👆 Please select a league and team to view players</p></div>';
+    const playersContent = document.getElementById('players-content');
+    if (playersContent) {
+        playersContent.innerHTML = '<div class="empty-state"><p>👆 Please select a league and team to view players</p></div>';
+    }
 }
 
 async function apiCall(action, data = {}) {
@@ -471,7 +480,8 @@ function filterLeagues(searchTerm = null) {
     loadLeaguesForSport(searchTerm);
 }
 
-function loadTeamsForLeague(searchTerm = '') {
+function loadTeamsForLeague(searchTerm = '', applySearchToMappings = true) {
+    const sportId = document.getElementById('global-sport-filter').value;
     const leagueId = selectedLeagueForTeams ? selectedLeagueForTeams.id : null;
     const teamsList = document.getElementById('teams-list');
     const unmappedList = document.getElementById('team-unmapped-list');
@@ -480,11 +490,28 @@ function loadTeamsForLeague(searchTerm = '') {
     // Filter teams based on whether a league is selected
     let filteredTeams;
     if (!leagueId) {
-        // No league selected - show ALL teams with a name
-        filteredTeams = teams.filter(t =>
-            (t.NAME && t.NAME.trim() !== '') ||
-            (t.full_name && t.full_name.trim() !== '')
-        );
+        // No league selected - filter by sport if selected
+        if (sportId) {
+            // Get all leagues for this sport
+            const leaguesForSport = leagues.filter(l => l.sport_id == sportId).map(l => l.id);
+
+            // Get team IDs for these leagues from league_team junction table
+            const teamIdsForSport = leagueTeams
+                .filter(lt => leaguesForSport.includes(lt.league_id))
+                .map(lt => lt.team_id);
+
+            // Filter teams by sport and exclude teams with empty names
+            filteredTeams = teams.filter(t =>
+                teamIdsForSport.includes(t.id) &&
+                ((t.NAME && t.NAME.trim() !== '') || (t.full_name && t.full_name.trim() !== ''))
+            );
+        } else {
+            // No sport selected - show ALL teams with a name
+            filteredTeams = teams.filter(t =>
+                (t.NAME && t.NAME.trim() !== '') ||
+                (t.full_name && t.full_name.trim() !== '')
+            );
+        }
     } else {
         // Get the main_league_id from the selected league
         const mainLeagueId = selectedLeagueForTeams.main_league_id;
@@ -561,10 +588,11 @@ function loadTeamsForLeague(searchTerm = '') {
         const shouldHighlightUnmapped = searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'unmapped');
         unmappedList.innerHTML = allUnmapped.map(m => {
             const highlightedName = shouldHighlightUnmapped ? highlightText(m.name, searchTerm) : m.name;
+            const teamName = selectedTeam ? (selectedTeam.NAME || selectedTeam.full_name || '') : '';
             return `
                 <div class="list-item unmapped-item" data-mapping-id="${m.id}">
                     <div class="list-item-name">${highlightedName}</div>
-                    ${selectedTeam ? `<button class="map-btn" onclick="mapTeamMapping(${m.id}, ${selectedTeam.id}); event.stopPropagation();">Map to ${selectedTeam.full_name}</button>` : ''}
+                    ${selectedTeam ? `<button class="map-btn" onclick="mapTeamMapping(${m.id}, ${selectedTeam.id}); event.stopPropagation();">Map to ${teamName}</button>` : ''}
                 </div>
             `;
         }).join('');
@@ -578,11 +606,11 @@ function loadTeamsForLeague(searchTerm = '') {
         // Show mappings for the selected team
         let mapped = teamMappings.filter(m => m.team_id !== null && Number(m.team_id) === Number(selectedTeam.id));
 
-        // Apply search filter only if filtering 'all' or 'mappings'
-        const searchTerm = document.getElementById('global-search').value.toLowerCase();
-        if (searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'mappings')) {
+        // Apply search filter only if applySearchToMappings is true and filtering 'all' or 'mappings'
+        const mappingsSearchTerm = applySearchToMappings ? document.getElementById('global-search').value.toLowerCase() : '';
+        if (mappingsSearchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'mappings')) {
             mapped = mapped.filter(m =>
-                m.name.toLowerCase().includes(searchTerm)
+                m.name.toLowerCase().includes(mappingsSearchTerm)
             );
         }
 
@@ -591,10 +619,10 @@ function loadTeamsForLeague(searchTerm = '') {
         if (mapped.length === 0) {
             mappingsList.innerHTML = '<div class="empty-state-small">No mappings for this team yet</div>';
         } else {
-            const shouldHighlightMappings = searchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'mappings');
+            const shouldHighlightMappings = mappingsSearchTerm && (currentSearchFilter === 'all' || currentSearchFilter === 'mappings');
             console.log('Setting HTML with', mapped.length, 'mappings');
             const html = mapped.map(m => {
-                const highlightedName = shouldHighlightMappings ? highlightText(m.name, searchTerm) : m.name;
+                const highlightedName = shouldHighlightMappings ? highlightText(m.name, mappingsSearchTerm) : m.name;
                 return `
                     <div class="mapping-item-compact" data-mapping-id="${m.id}">
                         <span class="mapping-name">${highlightedName}</span>
@@ -612,21 +640,11 @@ function loadTeamsForLeague(searchTerm = '') {
 function selectTeam(teamId) {
     selectedTeam = teams.find(t => t.id == teamId);
 
-    // Clear search bar
-    const searchInput = document.getElementById('global-search');
-    if (searchInput) {
-        searchInput.value = '';
-    }
+    // Get current search term to maintain filtering on teams and unmapped names
+    const searchTerm = document.getElementById('global-search').value.toLowerCase();
 
-    loadTeamsForLeague(); // Refresh to update active state and show mappings
-
-    // Scroll to selected team if one is selected
-    setTimeout(() => {
-        const activeItem = document.querySelector('#teams-list .list-item.active');
-        if (activeItem) {
-            activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, 100);
+    // Refresh with search term but don't apply it to mappings (applySearchToMappings = false)
+    loadTeamsForLeague(searchTerm, false);
 }
 
 function filterTeams(searchTerm = null) {
@@ -1947,12 +1965,21 @@ async function mapTeamMapping(mappingId, teamId) {
 
         // Reload mappings data and refresh the view
         await loadTeamMappings();
-        loadTeamsForLeague();
-        selectTeam(teamId);
+
+        // Set selected team
+        selectedTeam = teams.find(t => t.id == teamId);
+
+        // Get current search term to maintain filtering
+        const searchTerm = document.getElementById('global-search').value.toLowerCase();
+
+        // Refresh view with search term but don't apply it to mappings
+        loadTeamsForLeague(searchTerm, false);
 
         // Highlight the item in the mapped section after reload
         setTimeout(() => {
-            const mappedItem = document.querySelector(`[data-mapping-id="${mappingId}"]`);
+            // Only search within the mappings list, not the unmapped list
+            const mappingsList = document.getElementById('team-mappings-list');
+            const mappedItem = mappingsList.querySelector(`[data-mapping-id="${mappingId}"]`);
             if (mappedItem) {
                 mappedItem.classList.add('highlight-success');
                 mappedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1961,8 +1988,6 @@ async function mapTeamMapping(mappingId, teamId) {
                 }, 2000);
             }
         }, 100);
-
-        showNotification('Mapping updated successfully', 'success');
     } catch (error) {
         showNotification('Failed to update mapping: ' + error.message, 'error');
     }
@@ -1979,7 +2004,9 @@ async function mapPlayerMapping(mappingId, playerId) {
 
         // Highlight the item in the mapped section after reload
         setTimeout(() => {
-            const mappedItem = document.querySelector(`[data-mapping-id="${mappingId}"]`);
+            // Only search within the mappings list, not the unmapped list
+            const mappingsList = document.getElementById('player-mappings-list');
+            const mappedItem = mappingsList.querySelector(`[data-mapping-id="${mappingId}"]`);
             if (mappedItem) {
                 mappedItem.classList.add('highlight-success');
                 mappedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1988,8 +2015,6 @@ async function mapPlayerMapping(mappingId, playerId) {
                 }, 2000);
             }
         }, 100);
-
-        showNotification('Mapping updated successfully', 'success');
     } catch (error) {
         showNotification('Failed to update mapping: ' + error.message, 'error');
     }
