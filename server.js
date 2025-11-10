@@ -60,7 +60,7 @@ app.post('/api.php', async (req, res) => {
                 break;
 
             case 'getTeams':
-                const [teams] = await pool.query('SELECT * FROM team ORDER BY full_name');
+                const [teams] = await pool.query('SELECT * FROM team ORDER BY name');
                 res.json({ success: true, data: teams });
                 break;
 
@@ -89,10 +89,10 @@ app.post('/api.php', async (req, res) => {
 
             case 'getTeamMappings':
                 const [teamMappings] = await pool.query(`
-                    SELECT tm.*, t.full_name, t.abbr, lm.name as league_name, lm.league_id
+                    SELECT tm.*, t.full_name, t.abbr, l.name as league_name, l.id
                     FROM team_mapping tm
                     LEFT JOIN team t ON tm.team_id = t.id
-                    LEFT JOIN league_mapping lm ON tm.league_mapping_id = lm.id
+                    LEFT JOIN league l ON tm.league_id = l.id
                     ORDER BY tm.name
                 `);
                 res.json({ success: true, data: teamMappings });

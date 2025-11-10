@@ -194,7 +194,10 @@ async function apiCall(action, data = {}) {
 
 async function loadSports() { sports = await apiCall('getSports'); }
 async function loadLeagues() { leagues = await apiCall('getLeagues'); }
-async function loadTeams() { teams = await apiCall('getTeams'); }
+async function loadTeams() {
+    teams = await apiCall('getTeams');
+    console.log('Teams loaded:', teams.length);
+}
 async function loadPlayers() { players = await apiCall('getPlayers'); }
 async function loadLeagueTeams() { leagueTeams = await apiCall('getLeagueTeams'); }
 async function loadTeamPlayers() { teamPlayers = await apiCall('getTeamPlayers'); }
@@ -477,10 +480,10 @@ function loadTeamsForLeague(searchTerm = '') {
     // Filter teams based on whether a league is selected
     let filteredTeams;
     if (!leagueId) {
-        // No league selected - show ALL teams
+        // No league selected - show ALL teams with a name
         filteredTeams = teams.filter(t =>
-            t.full_name &&
-            t.full_name.trim() !== ''
+            (t.NAME && t.NAME.trim() !== '') ||
+            (t.full_name && t.full_name.trim() !== '')
         );
     } else {
         // Get the main_league_id from the selected league
@@ -499,17 +502,17 @@ function loadTeamsForLeague(searchTerm = '') {
         // Filter teams by those IDs and exclude teams with empty names
         filteredTeams = teams.filter(t =>
             teamIdsForLeague.includes(t.id) &&
-            t.full_name &&
-            t.full_name.trim() !== ''
+            ((t.NAME && t.NAME.trim() !== '') || (t.full_name && t.full_name.trim() !== ''))
         );
     }
 
     // Apply search filter only if filtering 'all' or 'items' (teams)
     if (searchTerm && searchTerm.trim() !== '' && (currentSearchFilter === 'all' || currentSearchFilter === 'items')) {
-        filteredTeams = filteredTeams.filter(t =>
-            t.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (t.abbr && t.abbr.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
+        filteredTeams = filteredTeams.filter(t => {
+            const teamName = t.NAME || t.full_name || '';
+            return teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (t.abbr && t.abbr.toLowerCase().includes(searchTerm.toLowerCase()));
+        });
     }
 
     // Update teams list
@@ -519,7 +522,8 @@ function loadTeamsForLeague(searchTerm = '') {
     } else {
         const shouldHighlight = searchTerm && searchTerm.trim() !== '' && (currentSearchFilter === 'all' || currentSearchFilter === 'items');
         teamsList.innerHTML = filteredTeams.map(team => {
-            const highlightedName = shouldHighlight ? highlightText(team.full_name, searchTerm) : team.full_name;
+            const teamName = team.NAME || team.full_name || '';
+            const highlightedName = shouldHighlight ? highlightText(teamName, searchTerm) : teamName;
             const highlightedAbbr = shouldHighlight ? highlightText(team.abbr || '', searchTerm) : (team.abbr || '');
             return `
                 <div class="list-item ${selectedTeam && selectedTeam.id === team.id ? 'active' : ''}" onclick="selectTeam(${team.id})">
@@ -1308,8 +1312,10 @@ function filterPlayerTeamsDropdown() {
     const searchTerm = document.getElementById('player-teams-search').value.toLowerCase();
     const dropdown = document.getElementById('player-teams-dropdown');
 
-    // Filter teams by selected league if one is selected
-    let availableTeams = teams.filter(t => t.full_name && t.full_name.trim() !== '');
+    // Filter teams by selected league if one is selected - show teams with NAME OR full_name
+    let availableTeams = teams.filter(t =>
+        (t.NAME && t.NAME.trim() !== '') || (t.full_name && t.full_name.trim() !== '')
+    );
     if (selectedLeagueForPlayers) {
         const leagueTeamIds = leagueTeams
             .filter(lt => lt.league_id == selectedLeagueForPlayers.id)
@@ -1318,22 +1324,25 @@ function filterPlayerTeamsDropdown() {
     }
 
     // Apply search filter
-    const filteredTeams = availableTeams.filter(t =>
-        t.full_name.toLowerCase().includes(searchTerm) ||
-        (t.name && t.name.toLowerCase().includes(searchTerm)) ||
-        (t.abbr && t.abbr.toLowerCase().includes(searchTerm))
-    );
+    const filteredTeams = availableTeams.filter(t => {
+        const teamName = t.NAME || t.full_name || '';
+        return teamName.toLowerCase().includes(searchTerm) ||
+            (t.abbr && t.abbr.toLowerCase().includes(searchTerm));
+    });
 
     if (filteredTeams.length === 0) {
         dropdown.innerHTML = '<div class="autocomplete-item">No teams found</div>';
     } else {
-        dropdown.innerHTML = filteredTeams.map(t => `
-            <div class="autocomplete-item ${selectedPlayerTeamIds.includes(t.id) ? 'selected' : ''}"
-                 onclick="togglePlayerTeam(${t.id})">
-                ${t.full_name}
-                ${selectedPlayerTeamIds.includes(t.id) ? '<span style="float: right;">✓</span>' : ''}
-            </div>
-        `).join('');
+        dropdown.innerHTML = filteredTeams.map(t => {
+            const teamName = t.NAME || t.full_name || '';
+            return `
+                <div class="autocomplete-item ${selectedPlayerTeamIds.includes(t.id) ? 'selected' : ''}"
+                     onclick="togglePlayerTeam(${t.id})">
+                    ${teamName}
+                    ${selectedPlayerTeamIds.includes(t.id) ? '<span style="float: right;">✓</span>' : ''}
+                </div>
+            `;
+        }).join('');
     }
     dropdown.style.display = 'block';
 }
@@ -1840,18 +1849,20 @@ function filterPlayerTeamDropdown() {
     let filteredTeams = teams.filter(t => leagueTeamIds.includes(t.id));
 
     if (searchTerm) {
-        filteredTeams = filteredTeams.filter(t =>
-            (t.full_name && t.full_name.toLowerCase().includes(searchTerm)) ||
-            (t.abbr && t.abbr.toLowerCase().includes(searchTerm))
-        );
+        filteredTeams = filteredTeams.filter(t => {
+            const teamName = t.NAME || t.full_name || '';
+            return teamName.toLowerCase().includes(searchTerm) ||
+                (t.abbr && t.abbr.toLowerCase().includes(searchTerm));
+        });
     }
 
     if (filteredTeams.length === 0) {
         dropdown.innerHTML = '<div class="autocomplete-item">No teams found</div>';
     } else {
-        dropdown.innerHTML = filteredTeams.map(t =>
-            `<div class="autocomplete-item" onclick="selectPlayerTeamFromDropdown(${t.id}, event)">${t.full_name} (${t.abbr})</div>`
-        ).join('');
+        dropdown.innerHTML = filteredTeams.map(t => {
+            const teamName = t.NAME || t.full_name || '';
+            return `<div class="autocomplete-item" onclick="selectPlayerTeamFromDropdown(${t.id}, event)">${teamName} (${t.abbr || ''})</div>`;
+        }).join('');
     }
 
     // Only show dropdown if input is focused (user is actively interacting)
@@ -1880,7 +1891,7 @@ function selectPlayerTeamFromDropdown(teamId, event) {
 function updatePlayerTeamFilterInput() {
     const input = document.getElementById('player-team-filter');
     if (selectedTeamForPlayers) {
-        input.value = selectedTeamForPlayers.full_name || selectedTeamForPlayers.fullname || '';
+        input.value = selectedTeamForPlayers.NAME || selectedTeamForPlayers.full_name || selectedTeamForPlayers.fullname || '';
     } else {
         input.value = '';
     }
